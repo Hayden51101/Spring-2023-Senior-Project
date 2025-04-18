@@ -12,22 +12,37 @@ def tempo_mode_test(mode_tempo: float, dilation: float, sensitivity: float, time
 
     test_tempo = mode_tempo * dilation
     correct_notes = 0
+    root_notes = 0
+    start_point = timestamps[0]
+    stop_point = timestamps[len(timestamps) - 1]
+    note_location = 0
 
-    for i in range(len(notes)):
-        for n in range(len(notes) - i - 1):
-            if(timestamps[i] + test_tempo > timestamps[i + n + 1] - sensitivity and
-               timestamps[i] + test_tempo < timestamps[i + n + 1] + sensitivity):
+    # for i in range(len(notes)):
+    #     for n in range(len(notes) - i - 1):
+    #         if(timestamps[i] + test_tempo > timestamps[i + n + 1] - sensitivity and
+    #            timestamps[i] + test_tempo < timestamps[i + n + 1] + sensitivity):
+    #             correct_notes+=1
+    #             if notes[i] == key[0]:
+    #                 correct_notes+=1
+
+    while note_location <= stop_point:
+        for i in range(len(notes)):
+            if(note_location * test_tempo + start_point > timestamps[i] - sensitivity and
+               note_location * test_tempo + start_point < timestamps[i] + sensitivity):
                 correct_notes+=1
-                if notes[i] == key[0]:
-                    correct_notes+=1
+                if notes[i][0] == key[0]:
+                    root_notes+=1
+        note_location+=1
 
-    return correct_notes / len(notes)
+    return root_notes + correct_notes / note_location, root_notes
 
 
 
-def average(num_list: list) -> float:
+def average(num_list: list, ROUND = True) -> float:
     if not num_list:
         return 0
+    if ROUND:
+        return round(sum(num_list) / len(num_list), 2)
     return sum(num_list) / len(num_list)
 
 
@@ -41,6 +56,30 @@ def find_mode_index(list: list):
             index = i
 
     return index
+
+
+
+def get_dilation_by_accuracy_array(list: list) -> float:
+    max_index = list.index(max(list))
+    if(max_index == 0): return 1
+    if(max_index == 1): return 0.5
+    if(max_index == 2): return 2
+    if(max_index == 3): return 0.25
+    if(max_index == 4): return 4
+    if(max_index == 5): return 1/3
+    if(max_index == 6): return 3
+
+
+
+def get_time_signature_by_accuracy_array(list: list) -> float:
+    max_index = list.index(max(list))
+    if(max_index == 0): return 4
+    if(max_index == 1): return 4
+    if(max_index == 2): return 4
+    if(max_index == 3): return 4
+    if(max_index == 4): return 4
+    if(max_index == 5): return 8
+    if(max_index == 6): return 8
 
 
 
@@ -64,7 +103,7 @@ def get_tempo(note_timestamps: list, notes_in_melody: list, key_of_melody: list,
 
 
 
-    note_distances = []
+    note_distances = [[]]
 
     for current_distance in distance_between_notes:
 
@@ -85,16 +124,38 @@ def get_tempo(note_timestamps: list, notes_in_melody: list, key_of_melody: list,
 
     mode_distance = average(note_distances[find_mode_index(note_distances)])
 
+    
 
+    tempo_accuracies = []
+    root_accuracies = []
 
-    print(tempo_mode_test(mode_distance, 1, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
-    print(tempo_mode_test(mode_distance, 1/2, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
-    print(tempo_mode_test(mode_distance, 2, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
-    print(tempo_mode_test(mode_distance, 1/4, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
-    print(tempo_mode_test(mode_distance, 4, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
-    print(tempo_mode_test(mode_distance, 1/3, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
-    print(tempo_mode_test(mode_distance, 3, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody))
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 1, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 1/2, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 2, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 1/4, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 4, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 1/3, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    accuracy, root_accuracy = tempo_mode_test(mode_distance, 3, distance_sensitivity, note_timestamps, notes_in_melody, key_of_melody)
+    tempo_accuracies.append(accuracy)
+    root_accuracies.append(root_accuracy)
+    
+    
 
+    # note_distances.remove(note_distances[find_mode_index(note_distances)])
+    # mode_distance = average(note_distances[find_mode_index(note_distances)])
 
+    
 
-    return mode_distance, 0
+    return mode_distance * get_dilation_by_accuracy_array(tempo_accuracies), get_time_signature_by_accuracy_array(tempo_accuracies)
